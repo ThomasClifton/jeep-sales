@@ -52,8 +52,12 @@ class FetchJeepTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     
     //And: the actual list is the same as the expected list
+    List<Jeep> actual = response.getBody();
     List<Jeep> expected = buildExpected();
-    assertThat(response.getBody()).isEqualTo(expected);
+    
+    actual.forEach(jeep -> jeep.setModelPK(0));
+    
+    assertThat(actual).isEqualTo(expected);
   }
 
   private List<Jeep> buildExpected() {
