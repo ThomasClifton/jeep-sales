@@ -2,9 +2,16 @@ package com.promineotech.jeep.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -55,9 +62,69 @@ class FetchJeepTest {
     List<Jeep> actual = response.getBody();
     List<Jeep> expected = buildExpected();
     
-    actual.forEach(jeep -> jeep.setModelPK(0));
+    //actual.forEach(jeep -> jeep.setModelPK(0));
     
     assertThat(actual).isEqualTo(expected);
+  }
+  
+  @Test
+  void testThatAnErrorMessageIsReturnedWhenAnUnkownTrimIsSupplied() {
+    // GIVEN: a valid model, trim, uri
+    JeepModel model = JeepModel.WRANGLER;
+    String trim = "unknown value";
+    String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+    
+    // WHEN: a connection is made to the uri
+    ResponseEntity<Map<String, Object>> response = restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+
+    
+    // THEN: a not found (404) code is returned
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    
+    //And: the actual list is the same as the expected list
+    Map<String, Object> error = response.getBody();
+    
+    assertErrorMessageValid(error, HttpStatus.NOT_FOUND);
+  }
+  
+  @ParameterizedTest
+  @MethodSource("com.promineotech.jeep.controller.FetchJeepTest#parametersForInvalidInput")
+  void testThatAnErrorMessageIsReturnedWhenAnInvalidTrimIsSupplied(String model, String trim, String reason) {
+    // GIVEN: a valid model, trim, uri
+    String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+    
+    // WHEN: a connection is made to the uri
+    ResponseEntity<Map<String, Object>> response = restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+
+    
+    // THEN: a not found (404) code is returned
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    
+    //And: the actual list is the same as the expected list
+    Map<String, Object> error = response.getBody();
+    
+    assertErrorMessageValid(error, HttpStatus.BAD_REQUEST);
+  }
+  
+  static Stream<Arguments> parametersForInvalidInput(){
+    // @formatter:off
+    return Stream.of(
+        arguments("WRANGLER", "@ji3#%", "Trim contains non-alpha-numeric characters"),
+        arguments("WRANGLER", "C".repeat(31), "Trim string too long"),
+        arguments("INVALID", "sport", "Model is not an enum value")
+    );
+    // @formatter:on
+  }
+
+  protected void assertErrorMessageValid(Map<String, Object> error, HttpStatus status) {
+    //@formatter:off
+    assertThat(error)
+      .containsKey("message")
+      .containsEntry("status code", status.value())
+      .containsKey("uri")
+      .containsKey("timestamp")
+      .containsEntry("reason", status.getReasonPhrase());
+    // @formatter:on
   }
 
   private List<Jeep> buildExpected() {
@@ -80,6 +147,7 @@ class FetchJeepTest {
         .build());
     // @formatter:on
     
+    Collections.sort(list);
     return list;
   }
 }
