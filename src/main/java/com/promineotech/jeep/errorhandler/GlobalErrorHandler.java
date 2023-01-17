@@ -56,10 +56,10 @@ public class GlobalErrorHandler {
     error.put("reason", status.getReasonPhrase());
     
     if(logStatus == LogStatus.MESSAGE_ONLY) {
-      log.error("exception: {}", e.toString());
+      log.error("exception: {} - {}", status, e.toString());
     }
-    {
-      log.error("Exception: {}", e);
+    else{
+      log.error("Exception: {} - {}", status, e);
     }
     return error;
   }

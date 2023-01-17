@@ -24,6 +24,7 @@ public class BasicJeepSalesService implements JeepSalesService {
     log.info("The fetchJeeps method was called with model={} and trim={}", model, trim);
     
     List<Jeep> jeeps = jeepSalesDao.fetchJeeps(model, trim);
+    System.out.println(jeeps);
     
     if(jeeps.isEmpty()) {
       String msg = String.format("No jeeps found with model=%s and trim=%s", model, trim);

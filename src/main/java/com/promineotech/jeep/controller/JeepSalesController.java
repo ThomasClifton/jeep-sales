@@ -65,7 +65,7 @@ public interface JeepSalesController {
       @RequestParam(required = false)
           JeepModel model,
       @Length(max = 30)
-      @Pattern(regexp = "[\\w\\s*]")
+      @Pattern(regexp = "[\\w\\s+]")
       @RequestParam(required = false)
           String trim);
   //@formatter:on

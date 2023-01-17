@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlConfig;
+import com.promineotech.jeep.controller.support.FetchJeepTestSupport;
 import com.promineotech.jeep.entity.Jeep;
 import com.promineotech.jeep.entity.JeepModel;
 
@@ -36,25 +37,19 @@ import com.promineotech.jeep.entity.JeepModel;
     config = @SqlConfig(encoding = "utf-8")
 )
 
-class FetchJeepTest {
-
-  @Autowired
-  private TestRestTemplate restTemplate;
-  
-  @LocalServerPort
-  private int serverPort;
+class FetchJeepTest extends FetchJeepTestSupport{
 
   @Test
   void testThatJeepsAreReturnedWhenAValidModelAndTrimAreSupplied() {
     // GIVEN: a valid model, trim, uri
     JeepModel model = JeepModel.WRANGLER;
     String trim = "Sport";
-    String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+    String uri = String.format("%s?model=%s&trim=%s", getBaseUriForJeeps(), model, trim);
     
     // WHEN: a connection is made to the uri
-    ResponseEntity<List<Jeep>> response = restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+    ResponseEntity<List<Jeep>> response = getRestTemplate().exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
 
-    
+    System.out.println(response);
     // THEN: a success (OK - 220) code is returned
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     
@@ -71,8 +66,8 @@ class FetchJeepTest {
   void testThatAnErrorMessageIsReturnedWhenAnUnkownTrimIsSupplied() {
     // GIVEN: a valid model, trim, uri
     JeepModel model = JeepModel.WRANGLER;
-    String trim = "unknown value";
-    String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+    String trim = "unknownvalue";
+    String uri = String.format("%s?model=%s&trim=%s", getBaseUriForJeeps(), model, trim);
     
     // WHEN: a connection is made to the uri
     ResponseEntity<Map<String, Object>> response = restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
@@ -91,10 +86,10 @@ class FetchJeepTest {
   @MethodSource("com.promineotech.jeep.controller.FetchJeepTest#parametersForInvalidInput")
   void testThatAnErrorMessageIsReturnedWhenAnInvalidTrimIsSupplied(String model, String trim, String reason) {
     // GIVEN: a valid model, trim, uri
-    String uri = String.format("http://localhost:%d/jeeps?model=%s&trim=%s", serverPort, model, trim);
+    String uri = String.format("%s?model=%s&trim=%s", getBaseUriForJeeps(), model, trim);
     
     // WHEN: a connection is made to the uri
-    ResponseEntity<Map<String, Object>> response = restTemplate.exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
+    ResponseEntity<Map<String, Object>> response = getRestTemplate().exchange(uri, HttpMethod.GET, null, new ParameterizedTypeReference<>() {});
 
     
     // THEN: a not found (404) code is returned
